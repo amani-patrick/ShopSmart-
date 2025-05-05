@@ -37,22 +37,16 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/auth/**").permitAll()
-
-                // User-specific endpoints
+                .requestMatchers("/auth/signup", "/auth/login").permitAll()
+                .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/sales/**", "/product/**", "/debts/**", "/reports/**", "/suppliers/**").hasRole("USER")
-
-                // Admin-specific endpoints
                 .requestMatchers("/inventory/**", "/user/**").hasAnyRole("ADMIN", "USER")
-
-                // All other endpoints require authentication
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
@@ -68,11 +62,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // CORS Configuration
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3030")); // Allow frontend origin
+        configuration.setAllowedOrigins(List.of("http://localhost:3030"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

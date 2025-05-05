@@ -10,6 +10,7 @@ public class SignupRequest {
     private Address address;
     private String password;
     private String confirmPassword;
+    private String role;
 
     public String getFirstName() {
         return firstName;
@@ -65,5 +66,13 @@ public class SignupRequest {
 
     public void setConfirmPassword(String confirmPassword) {
         this.confirmPassword = confirmPassword;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

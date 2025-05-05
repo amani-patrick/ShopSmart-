@@ -1,12 +1,17 @@
 package com.amnii.ShopSmart.Controller;
 
 import com.amnii.ShopSmart.Models.Product;
+import com.amnii.ShopSmart.Services.FileService;
 import com.amnii.ShopSmart.Services.ProductService;
+import com.amnii.ShopSmart.DTO.ProductDTO;
+import com.amnii.ShopSmart.DTO.ErrorResponse;
+import com.amnii.ShopSmart.Exception.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -15,6 +20,9 @@ public class InventoryController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private FileService fileService;
 
     @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Product> addProduct(
@@ -39,8 +47,12 @@ public class InventoryController {
         product.setStockAlertLevel(stockAlertLevel);
 
         if (image != null && !image.isEmpty()) {
-            String imageUrl = "/uploads/" + image.getOriginalFilename(); // Placeholder path
-            product.setImageUrl(imageUrl);
+            try {
+                String filename = fileService.saveFile(image);
+                String imageUrl = "/uploads/" + filename;
+                product.setImageUrl(imageUrl);
+            } catch (IOException e){}
+
         }
 
         Product saved = productService.addProduct(product);
@@ -60,13 +72,42 @@ public class InventoryController {
     }
 
     // ✅ Update product
-    @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product updatedProduct) {
-        Product updated = productService.updateProduct(id, updatedProduct);
-        if (updated == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long id,
+            @RequestParam("name") String name,
+            @RequestParam("category") String category,
+            @RequestParam("quantity") int quantity,
+            @RequestParam("unit") String unit,
+            @RequestParam("costPrice") double costPrice,
+            @RequestParam("sellingPrice") double sellingPrice,
+            @RequestParam("supplier") String supplier,
+            @RequestParam("stockAlertLevel") int stockAlertLevel,
+            @RequestParam(value = "image", required = false) MultipartFile image) {
+        try {
+            ProductDTO productDTO = new ProductDTO();
+            productDTO.setName(name);
+            productDTO.setCategory(category);
+            productDTO.setStockQuantity(quantity);
+            productDTO.setUnit(unit);
+            productDTO.setCostPrice(costPrice);
+            productDTO.setSellingPrice(sellingPrice);
+            productDTO.setSupplier(supplier);
+            productDTO.setStockAlertLevel(stockAlertLevel);
+            productDTO.setImage(image);
+
+            Product updated = productService.updateProduct(id, productDTO);
+            return ResponseEntity.ok(updated);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Product not found", e.getMessage()));
+        } catch (FileStorageException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("File storage error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Error updating product", e.getMessage()));
         }
-        return ResponseEntity.ok(updated);
     }
 
     // ✅ Delete product

@@ -1,11 +1,11 @@
 package com.amnii.ShopSmart.Services;
 
 import com.amnii.ShopSmart.DTO.SaleDTO;
-import com.amnii.ShopSmart.DTO.SalesSummaryDTO;
-import com.amnii.ShopSmart.DTO.SaleResponseDTO;
-import com.amnii.ShopSmart.Models.Product;
-import com.amnii.ShopSmart.Models.Sale;
+import com.amnii.ShopSmart.DTO.*;
+import com.amnii.ShopSmart.Models.*;
+
 import com.amnii.ShopSmart.Repository.SalesRepository;
+import com.amnii.ShopSmart.Exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,11 +36,11 @@ public class SalesService {
         logger.info("Creating sale for product ID: {}", saleDTO.getProductId());
         // Fetch the product
         Product product = productService.getProductById(saleDTO.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + saleDTO.getProductId()));
+                .orElseThrow(() -> new ProductNotFoundException(saleDTO.getProductId()));
 
         // Check product stock
         if (product.getStockQuantity() < saleDTO.getQuantitySold()) {
-            throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            throw new InsufficientStockException(product.getName());
         }
 
         // Create the sale
@@ -50,9 +50,18 @@ public class SalesService {
         sale.setTotalAmount(saleDTO.getTotalAmount());
         sale.setSaleDate(LocalDate.now());
 
-        // Update product stock
-        product.setStockQuantity(product.getStockQuantity() - saleDTO.getQuantitySold());
-        productService.updateProduct(product.getId(), product);
+        // Update product stock using ProductDTO
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setName(product.getName());
+        productDTO.setCategory(product.getCategory());
+        productDTO.setStockQuantity(product.getStockQuantity() - saleDTO.getQuantitySold());
+        productDTO.setUnit(product.getUnit());
+        productDTO.setCostPrice(product.getCostPrice());
+        productDTO.setSellingPrice(product.getSellingPrice());
+        productDTO.setSupplier(product.getSupplier());
+        productDTO.setStockAlertLevel(product.getStockAlertLevel());
+        
+        productService.updateProduct(product.getId(), productDTO);
 
         // Save and return the sale
         return salesRepository.save(sale);
@@ -91,18 +100,18 @@ public class SalesService {
 
         // Find existing sale
         Sale existingSale = salesRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Sale not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Sale not found with id: " + id));
 
         // Fetch the product
         Product product = productService.getProductById(saleDTO.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + saleDTO.getProductId()));
+                .orElseThrow(() -> new ProductNotFoundException(saleDTO.getProductId()));
 
         // Calculate the stock difference
         int quantityDifference = saleDTO.getQuantitySold() - existingSale.getQuantitySold();
 
         // Check if there's enough stock for the update
         if (product.getStockQuantity() < quantityDifference) {
-            throw new RuntimeException("Insufficient stock for product: " + product.getName());
+            throw new InsufficientStockException(product.getName());
         }
 
         // Update the sale details
@@ -110,9 +119,18 @@ public class SalesService {
         existingSale.setQuantitySold(saleDTO.getQuantitySold());
         existingSale.setTotalAmount(saleDTO.getTotalAmount());
 
-        // Update product stock
-        product.setStockQuantity(product.getStockQuantity() - quantityDifference);
-        productService.updateProduct(product.getId(), product);
+        // Update product stock using ProductDTO
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setName(product.getName());
+        productDTO.setCategory(product.getCategory());
+        productDTO.setStockQuantity(product.getStockQuantity() - quantityDifference);
+        productDTO.setUnit(product.getUnit());
+        productDTO.setCostPrice(product.getCostPrice());
+        productDTO.setSellingPrice(product.getSellingPrice());
+        productDTO.setSupplier(product.getSupplier());
+        productDTO.setStockAlertLevel(product.getStockAlertLevel());
+        
+        productService.updateProduct(product.getId(), productDTO);
 
         // Save and return the updated sale
         return salesRepository.save(existingSale);
@@ -147,4 +165,4 @@ public class SalesService {
 
         return summary;
     }
-} 
+}

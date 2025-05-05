@@ -15,6 +15,8 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private String role;
+
     public String register(SignupRequest request) {
         if (userRepo.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already in use");
@@ -31,6 +33,7 @@ public class AuthService {
         user.setShopName(request.getShopName());
         user.setAddress(request.getAddress());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(request.getRole() != null ? request.getRole() : "USER");
 
         userRepo.save(user);
         return "User registered successfully";
