@@ -3,6 +3,7 @@ package com.amnii.ShopSmart.Models;
 import jakarta.persistence.*;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Product {
@@ -18,9 +19,16 @@ public class Product {
     private double sellingPrice;
     private String supplier;
     private int stockAlertLevel;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Sale> sales;
+
     // Getters and Setters
 
     public Long getId() {
@@ -114,5 +122,13 @@ public class Product {
 
     public void setSales(List<Sale> sales) {
         this.sales = sales;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }

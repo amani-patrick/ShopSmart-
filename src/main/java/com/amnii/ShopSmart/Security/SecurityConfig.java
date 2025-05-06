@@ -18,12 +18,15 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
@@ -35,30 +38,50 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        logger.info("Configuring security filter chain");
+        
         http
-            .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/signup", "/auth/login").permitAll()
-                .requestMatchers("/uploads/**").permitAll()
-                .requestMatchers("/sales/**", "/product/**", "/debts/**", "/reports/**", "/suppliers/**").hasRole("USER")
-                .requestMatchers("/inventory/**", "/user/**").hasAnyRole("ADMIN", "USER")
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
+            .csrf(csrf -> {
+                logger.debug("Disabling CSRF");
+                csrf.disable();
+            })
+            .cors(cors -> {
+                logger.debug("Configuring CORS");
+                cors.configurationSource(corsConfigurationSource());
+            })
+            .authorizeHttpRequests(auth -> {
+                logger.debug("Configuring request authorization");
+                auth
+                    .requestMatchers("/api/auth/signup", "/api/auth/login", 
+                                   "/api/auth/forgot-password", 
+                                   "/api/auth/validate-reset-token", 
+                                   "/api/auth/reset-password",
+                                   "/api/auth/reset-password",
+                                   "/error").permitAll()
+                    .requestMatchers("/uploads/**").permitAll()
+                    .requestMatchers("/sales/**", "/product/**", "/debts/**", "/reports/**", "/suppliers/**").hasRole("USER")
+                    .requestMatchers("/inventory/**", "/user/**").hasAnyRole("ADMIN", "USER")
+                    .anyRequest().authenticated();
+            })
+            .sessionManagement(session -> {
+                logger.debug("Configuring session management");
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+            })
+            .exceptionHandling(ex -> {
+                logger.debug("Configuring exception handling");
+                ex.authenticationEntryPoint((request, response, authException) -> {
+                    logger.error("Authentication error: {}", authException.getMessage());
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    logger.error("Access denied: {}", accessDeniedException.getMessage());
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
-                })
-            )
+                });
+            })
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
+        logger.info("Security filter chain configuration completed");
         return http.build();
     }
 

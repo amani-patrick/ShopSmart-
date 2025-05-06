@@ -2,12 +2,14 @@ package com.amnii.ShopSmart.Services;
 
 import com.amnii.ShopSmart.DTO.ProductDTO;
 import com.amnii.ShopSmart.Models.Product;
+import com.amnii.ShopSmart.Models.User;
 import com.amnii.ShopSmart.Repository.ProductRepository;
 import com.amnii.ShopSmart.Repository.SalesRepository;
 import com.amnii.ShopSmart.Exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import  com.amnii.ShopSmart.Exception.FileStorageException;
+import com.amnii.ShopSmart.Exception.FileStorageException;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,16 +27,22 @@ public class ProductService {
     @Autowired
     private SalesRepository salesRepository;
 
+    private User getCurrentUser() {
+        return ((CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getUser();
+    }
+
     public Product addProduct(Product product) {
+        product.setUser(getCurrentUser());
         return productRepository.save(product);
     }
 
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return productRepository.findByUser(getCurrentUser());
     }
 
     public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+        return productRepository.findById(id)
+                .filter(product -> product.getUser().getId().equals(getCurrentUser().getId()));
     }
 
     public Product updateProduct(Long id, ProductDTO productDTO) {

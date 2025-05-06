@@ -2,6 +2,7 @@ package com.amnii.ShopSmart.Models;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Debt {
@@ -14,6 +15,11 @@ public class Debt {
     private LocalDate createdDate;
     private LocalDate dueDate;
     private boolean isPaid;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
 
     // Getters and Setters
     public Long getId() {
@@ -62,5 +68,13 @@ public class Debt {
 
     public void setPaid(boolean paid) {
         isPaid = paid;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 } 

@@ -1,18 +1,24 @@
 package com.amnii.ShopSmart.DTO;
 
+import com.amnii.ShopSmart.Models.Address;
+
 public class UserDTO {
     private String id;
     private String email;
     private String firstName;
     private String lastName;
     private String role;
+    private String shopName;
+    private Address address;
 
-    public UserDTO(String id, String email, String firstName, String lastName, String role) {
+    public UserDTO(String id, String email, String firstName, String lastName, String role, String shopName, Address address) {
         this.id = id;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
         this.role = role;
+        this.shopName = shopName;
+        this.address = address;
     }
 
     // Getters and setters
@@ -55,5 +61,21 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getShopName() {
+        return shopName;
+    }
+
+    public void setShopName(String shopName) {
+        this.shopName = shopName;
+    }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
     }
 }

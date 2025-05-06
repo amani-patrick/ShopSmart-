@@ -15,7 +15,6 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private String role;
 
     public String register(SignupRequest request) {
         if (userRepo.existsByEmail(request.getEmail())) {

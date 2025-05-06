@@ -1,6 +1,7 @@
 package com.amnii.ShopSmart.Models;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 @Entity
 public class Supplier {
@@ -19,6 +20,12 @@ public class Supplier {
     private String postalCode;
     private String country;
     private boolean isActive;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
+
     public Long getId() {
         return id;
     }
@@ -113,5 +120,13 @@ public class Supplier {
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
