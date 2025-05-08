@@ -30,10 +30,15 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    @SuppressWarnings("unused")
+    private final CustomAuthenticationFailureHandler authenticationFailureHandler;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, UserDetailsService userDetailsService) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, 
+                         UserDetailsService userDetailsService,
+                         CustomAuthenticationFailureHandler authenticationFailureHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userDetailsService = userDetailsService;
+        this.authenticationFailureHandler = authenticationFailureHandler;
     }
 
     @Bean
@@ -56,7 +61,7 @@ public class SecurityConfig {
                                    "/api/auth/forgot-password", 
                                    "/api/auth/validate-reset-token", 
                                    "/api/auth/reset-password",
-                                   "/api/auth/reset-password",
+                                   "/api/auth/update-profile",
                                    "/error").permitAll()
                     .requestMatchers("/uploads/**").permitAll()
                     .requestMatchers("/sales/**", "/product/**", "/debts/**", "/reports/**", "/suppliers/**").hasRole("USER")
@@ -71,11 +76,15 @@ public class SecurityConfig {
                 logger.debug("Configuring exception handling");
                 ex.authenticationEntryPoint((request, response, authException) -> {
                     logger.error("Authentication error: {}", authException.getMessage());
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("{\"error\": \"Invalid username or password\"}");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     logger.error("Access denied: {}", accessDeniedException.getMessage());
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                    response.setContentType("application/json");
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("{\"error\": \"Access denied\"}");
                 });
             })
             .authenticationProvider(authenticationProvider())

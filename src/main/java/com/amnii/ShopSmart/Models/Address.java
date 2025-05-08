@@ -1,12 +1,20 @@
 package com.amnii.ShopSmart.Models;
 
 import jakarta.persistence.Embeddable;
+import jakarta.validation.constraints.NotBlank;
 
 @Embeddable
 public class Address {
+    @NotBlank(message = "Street is required")
     private String street;
+
+    @NotBlank(message = "City is required")
     private String city;
+
+    @NotBlank(message = "Postal code is required")
     private String postalCode;
+
+    @NotBlank(message = "Country is required")
     private String country;
 
     // Getters and Setters
